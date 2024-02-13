@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Lab template
+
+
+Parameters:
+  LabVpcCidr:
+    Type: String
+    Default: 192.168.0.0/24
+  
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 192.168.0.0/27
+
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 192.168.0.32/27
+
+  PrivateSubnet3Cidr:
+    Type: String
+    Default: 192.168.0.64/27
+
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 192.168.0.96/27
+
+Resources:
+  LabVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref LabVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+  
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IGW
+
+  VPCtoIgwAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    
+    Properties:
+      InternetGatewayId: !Ref IGW
+      VpcId: !Ref LabVpc
+        
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LabVpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: 
+      -PublicRouteTable
+      -IGW
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+      RouteTableId: !Ref PublicRouteTable
+      
