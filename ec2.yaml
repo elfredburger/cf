@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Lab template
+
+Parameters:
+  AmazonLinuxAMIID:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: PublicSecurityGroup
+      GroupDescription: enable port 22
+      VpcId: !ImportValue LabVpc-Id
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSecurityGroup
+  
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: PrivateSecurityGroup
+      GroupDescription: enable port 22
+      VpcId: !ImportValue LabVpc-Id
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateSecurityGroup
+
+  PrivateServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmazonLinuxAMIID
+      InstanceType: "t3.micro"
+      SubnetId: !ImportValue PrivateSubnet1
+      SecurityGroupIds:
+        - !Ref PrivateSecurityGroup
+      KeyName: !Ref MyNewKeyPair
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateServer
+
+  PublicServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmazonLinuxAMIID
+      InstanceType: "t3.micro"
+      SubnetId: !ImportValue PublicSubnet1
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroup
+      KeyName: !Ref MyNewKeyPair
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicServer
+      
+  
+  
+  MyNewKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub ${AWS::StackName}-KeyPair
+      KeyFormat: ppk
+      KeyType: rsa
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-KeyPair
+      
